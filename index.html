@@ -33,6 +33,10 @@
         .form-group { margin-bottom: 15px; }
         .form-label { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: block; color: var(--text-main); }
         .hint-text { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: block;}
+        
+        /* สไตล์สำหรับกล่องแสดงรูปภาพตัวอย่าง */
+        .example-image-container { text-align: center; margin-bottom: 10px; background-color: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px dashed #ccc; }
+        .example-image-container img { max-width: 100%; height: auto; border-radius: 6px; max-height: 250px; object-fit: contain; }
 
         .upload-zone { border: 2px dashed var(--border-color); border-radius: 8px; padding: 30px 20px; text-align: center; background-color: #F9FAFB; cursor: pointer; transition: all 0.3s ease; margin-bottom: 20px; display: block; }
         .upload-zone:hover { border-color: var(--primary-color); background-color: #F3F4F6; }
@@ -75,7 +79,12 @@
 
         <div class="form-group">
             <label class="form-label" for="taskTitleInput">📝 หัวข้องานที่ต้องการตรวจเช็ค:</label>
-            <span class="hint-text">* หากแนบรูปหน้าปกอัลบั้มไลน์มาด้วย AI จะดึงชื่ออัลบั้มมาใส่ให้อัตโนมัติ หรือจะพิมพ์เองก็ได้</span>
+            <span class="hint-text">* หากเลือกรูปหน้าปกอัลบั้มไลน์ (ตามตัวอย่างด้านล่าง) มาด้วย AI จะดึงชื่ออัลบั้มมาใส่ให้อัตโนมัติ หรือจะพิมพ์เองก็ได้</span>
+            
+            <div class="example-image-container">
+                <img src="example.jpg" alt="ตัวอย่างการเลือกรูปหน้าปกอัลบั้ม" onerror="this.style.display='none'">
+            </div>
+
             <input type="text" id="taskTitleInput" class="input-field" placeholder="เช่น Weekly hot deals." style="margin-bottom: 0;">
         </div>
 
@@ -109,7 +118,6 @@
 </div>
 
 <script>
-    // เลือกรุ่นที่มีความฉลาดสูงในการอ่านตัวอักษรจากภาพ และจัดรูปแบบ JSON
     const AI_MODELS = [
         "gemini-1.5-flash",
         "gemini-2.0-flash",
@@ -204,7 +212,6 @@
         checkBtn.innerHTML = "กำลังประมวลผล...";
 
         try {
-            // อัปเดต Prompt ใหม่ ให้ AI คืนค่าเป็น JSON ที่มีทั้งชื่อเรื่อง และ รหัสสาขา
             const promptText = `คุณคือผู้ช่วยดึงข้อมูลจากรูปภาพ ให้กวาดสายตาดูรูปภาพทั้งหมดที่แนบมา และทำ 2 อย่างดังนี้:
             1. ค้นหา 'ชื่ออัลบั้มไลน์' หรือข้อความที่ดูเหมือนเป็นหัวข้องานตัวใหญ่ๆ (เช่น 'Weekly hot deals.') ถ้าพบให้เก็บไว้เป็น task_title ถ้าไม่พบให้ปล่อยว่าง
             2. ค้นหารหัสสาขาตัวเลข 4 หลักทั้งหมดที่ปรากฏในรูปภาพ เก็บเป็น array ใน store_codes
@@ -238,7 +245,7 @@
                         headers: { 
                             'Content-Type': 'application/json',
                             'x-goog-api-key': apiKey,
-                            'Authorization': 'Bearer ' // ทริคหลอกเซิร์ฟเวอร์
+                            'Authorization': 'Bearer ' 
                         },
                         body: JSON.stringify({
                             contents: [{ parts: parts }]
@@ -312,13 +319,11 @@
         let aiTitle = "";
 
         try {
-            // ลบโค้ดบล็อก Markdown (```json และ ```) ที่ AI มักจะชอบแถมมาด้วย เพื่อให้ Parse ได้
             let cleanJsonString = aiText.replace(/```json/gi, '').replace(/```/g, '').trim();
             let parsedData = JSON.parse(cleanJsonString);
             
             aiTitle = parsedData.task_title || "";
             
-            // กรณี AI ดึงตัวเลขออกมาเป็น Array
             if (Array.isArray(parsedData.store_codes)) {
                 foundNumbers = parsedData.store_codes.map(code => code.toString());
             } else {
@@ -326,11 +331,9 @@
             }
         } catch (e) {
             console.warn("JSON Parse Failed, falling back to regex extraction", e);
-            // ถ้าระบบ JSON ล้มเหลว ให้ใช้ Regex ดึงตัวเลข 4 หลักออกมาดื้อๆ เพื่อกันเหนียว
             foundNumbers = aiText.match(/\b\d{4}\b/g) || [];
         }
 
-        // ถ้าดึงชื่อเรื่องจากรูปได้ ให้ไปยัดใส่ช่อง input บนหน้าจอให้ User เห็นด้วย
         const titleInput = document.getElementById('taskTitleInput');
         if (aiTitle) {
             titleInput.value = aiTitle;
@@ -356,15 +359,13 @@
         const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
         const dateString = now.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
         
-        // ถ้าช่องยังว่างอยู่ ให้ตั้งชื่อ Default
         const taskTitle = finalTaskTitle.trim() ? finalTaskTitle.trim() : "ตรวจสอบการส่งงาน";
 
-        let report = `📋 เรื่อง: ${taskTitle}\n`;
-        report += `📍 พื้นที่: 404\n`;
+        // เปลี่ยนคำว่า "เรื่อง" เป็น "อัพเดทงาน" และเอา "พื้นที่: 404" ออก
+        let report = `📋 อัพเดทงาน: ${taskTitle}\n`;
         report += `🕒 อัปเดต: ${dateString} เวลา ${timeString} น.\n`;
         report += `-----------------------------\n`;
 
-        // สาขาที่ขาดส่งอยู่ด้านบน
         report += `❌ ขาดส่ง (${missing.length} สาขา):\n`;
         if (missing.length === 0) {
             report += `- (ครบทุกสาขา ยอดเยี่ยมมากครับ!)\n`;
@@ -374,7 +375,6 @@
             });
         }
 
-        // สาขาที่ส่งแล้วอยู่ด้านล่าง
         report += `\n✅ ส่งแล้ว (${submitted.length} สาขา):\n`;
         if (submitted.length === 0) {
             report += `- (ยังไม่มีสาขาที่ส่ง)\n`;
