@@ -115,9 +115,9 @@
 </div>
 
 <script>
-    // กำหนดให้ใช้เฉพาะรุ่น 2.0 flash ตามที่ต้องการ
     const AI_MODELS = [
         "gemini-2.0-flash"
+       
     ];
 
     const branches404 = {
@@ -323,4 +323,80 @@
             if (Array.isArray(parsedData.store_codes)) {
                 foundNumbers = parsedData.store_codes.map(code => code.toString());
             } else {
+                foundNumbers = [];
+            }
+        } catch (e) {
+            console.warn("JSON Parse Failed, falling back to regex extraction", e);
+            foundNumbers = aiText.match(/\b\d{4}\b/g) || [];
+        }
+
+        const titleInput = document.getElementById('taskTitleInput');
+        if (aiTitle) {
+            titleInput.value = aiTitle;
+        }
+
+        const uniqueFoundNumbers = [...new Set(foundNumbers)];
+        const submitted = [];
+        const missing = [];
+
+        for (const [code, name] of Object.entries(branches404)) {
+            if (uniqueFoundNumbers.includes(code)) {
+                submitted.push({ code, name });
+            } else {
+                missing.push({ code, name });
+            }
+        }
+
+        generateLineReport(submitted, missing, titleInput.value);
+    }
+
+    function generateLineReport(submitted, missing, finalTaskTitle) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        const dateString = now.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+        
+        const taskTitle = finalTaskTitle.trim() ? finalTaskTitle.trim() : "ตรวจสอบการส่งงาน";
+
+        let report = `📋 อัพเดทงาน: ${taskTitle}\n`;
+        report += `🕒 อัปเดต: ${dateString} เวลา ${timeString} น.\n`;
+        report += `-----------------------------\n`;
+
+        report += `❌ ขาดส่ง (${missing.length} สาขา):\n`;
+        if (missing.length === 0) {
+            report += `- (ครบทุกสาขา ยอดเยี่ยมมากครับ!)\n`;
+        } else {
+            missing.forEach(branch => {
+                report += `- ${branch.code} ${branch.name}\n`;
+            });
+        }
+
+        report += `\n✅ ส่งแล้ว (${submitted.length} สาขา):\n`;
+        if (submitted.length === 0) {
+            report += `- (ยังไม่มีสาขาที่ส่ง)\n`;
+        } else {
+            submitted.forEach(branch => {
+                report += `- ${branch.code} ${branch.name}\n`;
+            });
+            report += `\n🙏 ขอบคุณทุกสาขาที่ส่งงานเรียบร้อยแล้วครับ\n`;
+        }
+
+        document.getElementById('lineReport').value = report;
+        document.getElementById('resultArea').style.display = 'block';
+    }
+
+    function copyForLine() {
+        const reportText = document.getElementById('lineReport');
+        reportText.select();
+        reportText.setSelectionRange(0, 99999);
+        
+        navigator.clipboard.writeText(reportText.value).then(() => {
+            alert("คัดลอกข้อความสำเร็จ! เปิดแอป LINE เพื่อวางข้อมูลได้เลยครับ");
+        }).catch(err => {
+            alert("ไม่สามารถคัดลอกอัตโนมัติได้ กรุณากดค้างที่ข้อความเพื่อคัดลอกเองครับ");
+        });
+    }
+</script>
+
+</body>
+</html>
 
