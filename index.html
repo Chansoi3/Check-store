@@ -115,10 +115,12 @@
 </div>
 
 <script>
-    // ปรับการเรียกใช้ Model ให้เจาะจงใช้งาน Gemini 2.0 Flash
+        // ปรับชื่อโมเดลให้ครอบคลุมทุกเวอร์ชันป้องกัน Error "not found"
     const AI_MODELS = [
-        "gemini-2.0-flash", // ตัวเลือกแรกและหลัก
-        "gemini-1.5-flash"  // สำรองไว้ในกรณีที่ 2.0 มีปัญหาการเชื่อมต่อ
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-exp",
+        "gemini-1.5-flash-latest",
+        "gemini-1.5-flash"
     ];
 
     const branches404 = {
